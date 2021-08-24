@@ -35,10 +35,25 @@ app.post("/api/reflected", async (req, res) => {
   }
 });
 
+app.post("/api/dom", async (req, res) => {
+  const { target_url, cookies, payloads } = req.body;
+  try {
+    const parsedPayload = payloads.replace(/\\n/g, "");
+    console.log(parsedPayload);
+    const command = `yarn dom-cli --target_url=${target_url} --cookies="${cookies}" --payloads="${parsedPayload}"`;
+    const reflected = shelljs.exec(command, { silent: true });
+    const response = {
+      message: "DOM XSS",
+      data: reflected.stdout,
+    };
+    res.json(response);
+  } catch {
+    res.json({
+      message: "failed",
+    });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Example app listening at ${PORT}`);
 });
-
-// const { code, stdout } = reflected;
-// console.log(`Code: ${code}`);
-// console.log(`Stdout: ${stdout}`);
