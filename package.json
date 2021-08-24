@@ -11,12 +11,15 @@
     "dotenv": "^10.0.0",
     "fs": "^0.0.1-security",
     "puppeteer-core": "^10.1.0",
+    "shelljs": "^0.8.4",
+    "express": "^4.17.1",
     "yargs": "^17.1.1"
   },
   "scripts": {
     "start": "node index.js",
     "dom-cli": "node dom-cli.js",
-    "reflected-cli": "node reflected-cli.js"
+    "reflected-cli": "node reflected-cli.js",
+    "stored-cli": "node stored-cli.js"
   },
   "type": "module"
 }
