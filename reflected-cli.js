@@ -1,7 +1,6 @@
 "use strict";
 import puppeteer from "puppeteer-core";
 import dotenv from "dotenv";
-import fs from "fs";
 import Bluebird from "bluebird";
 import yargs from "yargs";
 
@@ -15,13 +14,11 @@ const args = yargs(process.argv.slice(2)).argv;
 
 const TARGET_URL = args.target_url;
 const COOKIES = args.cookies;
-const FILE_NAME = "./payloads/payload.txt";
+const PAYLOADS = args.payloads;
 
 (async () => {
   try {
-    const payloads = await (
-      await fs.promises.readFile(FILE_NAME, "utf-8")
-    ).split("\n");
+    const payloads = PAYLOADS.split(";");
 
     const browser = await puppeteer.launch({
       headless: true,
