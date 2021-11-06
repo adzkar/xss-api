@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import shelljs from "shelljs";
+import cors from "cors";
 
 dotenv.config();
 
@@ -9,6 +10,12 @@ const PORT = process.env.APP_PORT;
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(
+  cors({
+    credentials: true,
+    origin: "*",
+  })
+);
 
 app.get("/", (req, res) => {
   res.json({
