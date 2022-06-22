@@ -15,11 +15,11 @@ const args = yargs(process.argv.slice(2)).argv;
 
 const TARGET_URL = args.target_url;
 const COOKIES = args.cookies;
-const PAYLOADS = args.payloads;
+const PAYLOAD = args.payload;
 
 (async () => {
   try {
-    const payloads = PAYLOADS.split(";");
+    const payload = PAYLOAD;
 
     const browser = await puppeteer.launch({
       headless: true,
@@ -73,6 +73,7 @@ const PAYLOADS = args.payloads;
         []
       );
     });
+    console.log(filteredSubmitName, " filtered submit name");
 
     const filteredSelectName = await page.evaluate(() => {
       const types = document.querySelectorAll("select");
@@ -89,6 +90,7 @@ const PAYLOADS = args.payloads;
         []
       );
     });
+    console.log(filteredSelectName, " filtered select name");
 
     // console.log("Running Reflected XSS Scanner");
     // checking if the page is exist
@@ -102,37 +104,38 @@ const PAYLOADS = args.payloads;
           const method = await page.$eval("form", getFormMethod);
           if (method.toUpperCase() === METHOD.GET) {
             const queries = [];
-            payloads.forEach((payload) => {
-              const inputQueries = filteredInputName
-                .map((item) => {
-                  return `${item}=${payload}&`;
-                })
-                .join();
-              if (inputQueries.length > 0) {
-                queries.push(`?${inputQueries.slice(0, -1)}`);
-              }
-              const submitQueries = filteredSubmitName
-                .map((item) => {
-                  return `${item}=${payload}&`;
-                })
-                .join();
-              if (submitQueries.length > 0) {
-                queries.push(`?${submitQueries.slice(0, -1)}`);
-              }
-              const selectQueries = filteredSelectName
-                .map((item) => {
-                  return `${item}=${payload}&`;
-                })
-                .join();
-              if (selectQueries.length > 0) {
-                queries.push(`?${selectQueries.slice(0, -1)}`);
-              }
-            });
 
+            // payloads.forEach((payload) => {
+            const inputQueries = filteredInputName
+              .map((item) => {
+                return `${item}=${payload}&`;
+              })
+              .join();
+            if (inputQueries.length > 0) {
+              queries.push(`?${inputQueries.slice(0, -1)}`);
+            }
+            const submitQueries = filteredSubmitName
+              .map((item) => {
+                return `${item}=${payload}&`;
+              })
+              .join();
+            if (submitQueries.length > 0) {
+              queries.push(`?${submitQueries.slice(0, -1)}`);
+            }
+            const selectQueries = filteredSelectName
+              .map((item) => {
+                return `${item}=${payload}&`;
+              })
+              .join();
+            if (selectQueries.length > 0) {
+              queries.push(`?${selectQueries.slice(0, -1)}`);
+            }
+            // });
+            console.log(queries, " queries");
             const cases = queries.map((query, index) => {
               const testedUrl = `${TARGET_URL}${query}`;
               return {
-                payload: payloads[index],
+                payload,
                 url: testedUrl,
               };
             });
@@ -166,7 +169,7 @@ const PAYLOADS = args.payloads;
           }
         }
       } catch {
-        console.log(commonMessage.noPossibility("Reflected XSS"));
+        console.log(commonMessage.noPossibility("DOM XSS"));
       }
     }
 

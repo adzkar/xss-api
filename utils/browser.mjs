@@ -5,7 +5,7 @@ dotenv.config();
 
 export const withBrowser = async (fn) => {
   const browser = await puppeteer.launch({
-    headless: true,
+    headless: false,
     executablePath: process.env.CHROME_EXECUTABLE_PATH,
   });
   try {

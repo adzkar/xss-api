@@ -26,17 +26,28 @@ app.get("/", (req, res) => {
 });
 
 app.post("/api/reflected", async (req, res) => {
-  const { target_url, cookies, payloads } = req.body;
+  const { target_url, cookies, payloads = [] } = req.body;
   try {
-    const parsedPayload = payloads.replace(/\\n/g, "");
-    console.log(parsedPayload);
+    const parsedPayload = JSON.stringify(payloads)
+      .replace(/"/g, "'")
+      .replace(/</g, "\\<")
+      .replace(/>/g, "\\>")
+      .replace(/'/g, "\\'")
+      .replace(/\\/g, "\\")
+      .replace(/\//g, "/");
     const command = `yarn reflected-cli --target_url=${target_url} --cookies="${cookies}" --payloads="${parsedPayload}"`;
-    const reflected = shelljs.exec(command, { silent: true });
-    const response = {
-      message: "Reflected XSS",
-      data: reflected.stdout,
-    };
-    res.json(response);
+    // const reflected = shelljs.exec(command, { silent: true });
+    // console.log(JSON.stringify(payloads), " payloads");
+    // console.log(reflected.stdout, " a");
+    console.log(command, " command");
+    // const response = {
+    //   message: "Reflected XSS",
+    //   data: reflected.stdout,
+    // };
+    // res.json(response);
+    res.json({
+      data: [],
+    });
   } catch {
     res.json({
       message: "failed",
@@ -45,15 +56,14 @@ app.post("/api/reflected", async (req, res) => {
 });
 
 app.post("/api/dom", async (req, res) => {
-  const { target_url, cookies, payloads } = req.body;
+  const { target_url, cookies, payloads = [] } = req.body;
+
   try {
-    const parsedPayloads = payloads;
     const ans = [];
-    parsedPayloads.forEach((payload) => {
-      const command = `yarn dom-cli --target_url=${target_url} --cookies="${cookies}" --payloads="${payload}"`;
-      const reflected = shelljs.exec(command, { silent: true });
-      console.log(reflected.stdout, " reflected stdout");
-      console.log(typeof reflected.stdout, " reflected stdout");
+    payloads.forEach((payload) => {
+      const command = `yarn dom-cli --target_url=${target_url} --cookies="${cookies}" --payload="${payload}"`;
+      const reflected = shelljs.exec(command, { silent: false });
+      console.log(reflected.stdout, " stdout");
       const formattedResponse = reflected.stdout
         .split(splitter)
         .slice(1)
@@ -65,6 +75,7 @@ app.post("/api/dom", async (req, res) => {
         })
       );
     });
+    console.log({ ans });
     res.send({
       message: "Reflected XSS",
       data: ans,
