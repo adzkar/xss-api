@@ -28,25 +28,29 @@ app.get("/", (req, res) => {
 app.post("/api/reflected", async (req, res) => {
   const { target_url, cookies, payloads = [] } = req.body;
   try {
-    const parsedPayload = JSON.stringify(payloads)
-      .replace(/"/g, "'")
-      .replace(/</g, "\\<")
-      .replace(/>/g, "\\>")
-      .replace(/'/g, "\\'")
-      .replace(/\\/g, "\\")
-      .replace(/\//g, "/");
-    const command = `yarn reflected-cli --target_url=${target_url} --cookies="${cookies}" --payloads="${parsedPayload}"`;
-    // const reflected = shelljs.exec(command, { silent: true });
-    // console.log(JSON.stringify(payloads), " payloads");
-    // console.log(reflected.stdout, " a");
-    console.log(command, " command");
-    // const response = {
-    //   message: "Reflected XSS",
-    //   data: reflected.stdout,
-    // };
-    // res.json(response);
-    res.json({
-      data: [],
+    const ans = [];
+    payloads.forEach((payload) => {
+      const parsedPayload = payload.replace(/"/g, '\\"');
+
+      const command = `yarn reflected-cli --target_url=${target_url} --cookies="${cookies}" --payload="${parsedPayload}"`;
+      console.log(command);
+      const reflected = shelljs.exec(command, { silent: false });
+
+      const formattedResponse = reflected.stdout
+        .split(splitter)
+        .slice(1)
+        .join("\n");
+      ans.push(
+        formatter({
+          payload,
+          message: formattedResponse,
+        })
+      );
+    });
+
+    res.send({
+      message: "Reflected  Xss",
+      data: ans,
     });
   } catch {
     res.json({
@@ -77,7 +81,7 @@ app.post("/api/dom", async (req, res) => {
     });
     console.log({ ans });
     res.send({
-      message: "Reflected XSS",
+      message: "DOM XSS",
       data: ans,
     });
   } catch (e) {
