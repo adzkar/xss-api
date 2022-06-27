@@ -36,16 +36,19 @@ const CANCELED_BUTTONS = ["clear", "reset", "cancel"];
       try {
         console.log(skipper(dialog.message()), " dialog message");
         await dialog.accept();
+        isFound = true;
         if (dialog.message()) {
-          isFound = true;
           await browser.close();
         }
         console.log(
-          `${splitter}${JSON.stringify({
-            payload,
-            value: isFound,
-          })}`
+          `${splitter}${JSON.stringify([
+            {
+              result: isFound,
+              payload,
+            },
+          ])}`
         );
+        process.exit(1);
       } catch {
         console.log("no alert");
       }
@@ -54,7 +57,8 @@ const CANCELED_BUTTONS = ["clear", "reset", "cancel"];
       .goto(TARGET_URL, {
         waitUntil: "networkidle2",
       })
-      .catch(() => {
+      .catch((err) => {
+        console.log(skipper(err));
         console.log(commonMessage.invalidUrl);
         process.exit(1);
       });
@@ -189,8 +193,8 @@ const CANCELED_BUTTONS = ["clear", "reset", "cancel"];
                     });
                   const waitSubmitBtn = await page
                     .waitForSelector(submitButtonSelector)
-                    .catch(() => {
-                      console.log(skipper(" err click button"));
+                    .catch((err) => {
+                      console.log(skipper(err));
                     });
 
                   try {
@@ -208,7 +212,7 @@ const CANCELED_BUTTONS = ["clear", "reset", "cancel"];
               }
             );
 
-            console.log(`${splitter}${JSON.stringify(results)}`);
+            // console.log(`${splitter}${JSON.stringify(results)}`);
           }
         }
       } catch {
@@ -216,7 +220,7 @@ const CANCELED_BUTTONS = ["clear", "reset", "cancel"];
       }
     }
 
-    await browser.close();
+    // await browser.close();
   } catch (err) {
     console.log(err);
   }
