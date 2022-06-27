@@ -6,6 +6,7 @@ import yargs from "yargs";
 
 import { getFormMethod } from "./utils/commonUtils.mjs";
 import METHOD from "./constants/method.mjs";
+import { commonMessage, splitter, skipper } from "./constants/words.mjs";
 
 dotenv.config();
 
@@ -13,13 +14,13 @@ const args = yargs(process.argv.slice(2)).argv;
 
 const TARGET_URL = args.target_url;
 const COOKIES = args.cookies;
-const PAYLOADS = args.payloads;
+const PAYLOAD = args.payload;
 
 const CANCELED_BUTTONS = ["clear", "reset", "cancel"];
 
 (async () => {
   try {
-    const payloads = PAYLOADS.split(";");
+    const payload = PAYLOAD;
 
     const browser = await puppeteer.launch({
       headless: false,
@@ -33,13 +34,18 @@ const CANCELED_BUTTONS = ["clear", "reset", "cancel"];
     var isFound = false;
     await page.on("dialog", async (dialog) => {
       try {
-        console.log(dialog.message(), " dialog message");
-        isFound = true;
+        console.log(skipper(dialog.message()), " dialog message");
         await dialog.accept();
         if (dialog.message()) {
-          console.log("XSS Stored is found");
+          isFound = true;
           await browser.close();
         }
+        console.log(
+          `${splitter}${JSON.stringify({
+            payload,
+            value: isFound,
+          })}`
+        );
       } catch {
         console.log("no alert");
       }
@@ -49,12 +55,12 @@ const CANCELED_BUTTONS = ["clear", "reset", "cancel"];
         waitUntil: "networkidle2",
       })
       .catch(() => {
-        console.log("Invalid URL or The Web is not found");
+        console.log(commonMessage.invalidUrl);
         process.exit(1);
       });
 
     if (page.url() !== TARGET_URL) {
-      console.log("You need the credential");
+      console.log(commonMessage.needCredential);
       process.exit(1);
     }
 
@@ -140,34 +146,33 @@ const CANCELED_BUTTONS = ["clear", "reset", "cancel"];
       )
     );
 
-    console.log("Running Stored XSS Scanner");
+    console.log(skipper("Running Stored XSS Scanner"));
     // checking if the page is exist
     if (response.status() === 200) {
       try {
         // checking form
-        console.log("Searching possibility Stored XSS");
+        console.log(skipper("Searching possibility Stored XSS"));
         const forms = await page.$$("form");
 
         if (forms.length > 0) {
           const method = await page.$eval("form", getFormMethod);
           if (method.toUpperCase() === METHOD.POST) {
             // generate cases
-            const cases = payloads.map((payload) => {
-              return {
+            const cases = [
+              {
                 url: TARGET_URL,
                 payload,
                 tags: inputName,
-              };
-            });
-
+              },
+            ];
             const results = await Bluebird.map(
               cases,
               async ({ tags, payload }) => {
                 await tags.forEach(async (item) => {
                   const typedTag = `${item.tag}[name=${item.name}]`;
                   const buttonTag = filteredSubmit?.[0];
-                  const clickedButton = `${buttonTag.tag}[name=${buttonTag.name}]`;
-                  console.log(typedTag, " typed tag");
+                  const submitButtonSelector = `${buttonTag.tag}[name=${buttonTag.name}]`;
+
                   await page
                     .evaluate(
                       ({ typedTag, payload }) => {
@@ -180,33 +185,34 @@ const CANCELED_BUTTONS = ["clear", "reset", "cancel"];
                     )
                     .catch((err) => {
                       // console.log(err, " err typing payload");
-                      console.log(" err typing payload");
+                      console.log(skipper("err typing payload"));
                     });
-
                   const waitSubmitBtn = await page
-                    .waitForSelector(clickedButton)
+                    .waitForSelector(submitButtonSelector)
                     .catch(() => {
-                      console.log(" err select button");
+                      console.log(skipper(" err click button"));
                     });
 
                   try {
-                    await waitSubmitBtn.click();
-
+                    await page.click(submitButtonSelector);
                     await page.waitForNavigation();
                   } catch {
-                    console.log("failed to click btn");
+                    console.log(skipper("failed to click btn"));
                   }
                 });
 
-                return isFound;
+                return {
+                  result: isFound,
+                  payload,
+                };
               }
             );
 
-            console.log(results, " results");
+            console.log(`${splitter}${JSON.stringify(results)}`);
           }
         }
       } catch {
-        console.log("There is no possibility for Stored XSS");
+        console.log(commonMessage.noPossibility("Stored XSS"));
       }
     }
 

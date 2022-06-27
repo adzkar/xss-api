@@ -1,4 +1,5 @@
 const splitter = "Result: ";
+const skip = "Skip: ";
 
 const commonMessage = {
   failed: "failed",
@@ -9,4 +10,8 @@ const commonMessage = {
   needCredential: `${splitter}You need the credential`,
 };
 
-export { splitter, commonMessage };
+const skipper = (params) => {
+  return `${skip} ${params}`;
+};
+
+export { splitter, commonMessage, skipper };

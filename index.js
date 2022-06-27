@@ -55,6 +55,7 @@ app.post("/api/reflected", async (req, res) => {
   } catch {
     res.json({
       message: "failed",
+      data: [],
     });
   }
 });
@@ -65,7 +66,8 @@ app.post("/api/dom", async (req, res) => {
   try {
     const ans = [];
     payloads.forEach((payload) => {
-      const command = `yarn dom-cli --target_url=${target_url} --cookies="${cookies}" --payload="${payload}"`;
+      const parsedPayload = payload.replace(/"/g, '\\"');
+      const command = `yarn dom-cli --target_url=${target_url} --cookies="${cookies}" --payload="${parsedPayload}"`;
       const reflected = shelljs.exec(command, { silent: false });
       console.log(reflected.stdout, " stdout");
       const formattedResponse = reflected.stdout
@@ -88,6 +90,7 @@ app.post("/api/dom", async (req, res) => {
     console.log(e, " e");
     res.json({
       message: "failed",
+      data: [],
     });
   }
 });
@@ -95,18 +98,32 @@ app.post("/api/dom", async (req, res) => {
 app.post("/api/stored", async (req, res) => {
   const { target_url, cookies, payloads } = req.body;
   try {
-    const parsedPayload = payloads.replace(/\\n/g, "");
-    console.log(parsedPayload);
-    const command = `yarn stored-cli --target_url=${target_url} --cookies="${cookies}" --payloads="${parsedPayload}"`;
-    const reflected = shelljs.exec(command, { silent: true });
-    const response = {
+    const ans = [];
+    payloads.forEach((payload) => {
+      const parsedPayload = payload.replace(/"/g, '\\"');
+      const command = `yarn stored-cli --target_url=${target_url} --cookies="${cookies}" --payload="${parsedPayload}"`;
+      const reflected = shelljs.exec(command, { silent: true });
+      console.log(reflected.stdout, " stdout");
+      const formattedResponse = reflected.stdout
+        .split(splitter)
+        .slice(1)
+        .join("\n");
+      ans.push(
+        formatter({
+          payload,
+          message: formattedResponse,
+        })
+      );
+    });
+    res.send({
       message: "Stored XSS",
-      data: reflected.stdout,
-    };
-    res.json(response);
-  } catch {
+      data: ans,
+    });
+  } catch (e) {
+    console.log(e, " e");
     res.json({
       message: "failed",
+      data: [],
     });
   }
 });
